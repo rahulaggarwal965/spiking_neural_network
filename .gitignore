@@ -1,0 +1,7 @@
+.vimspector.json
+compile_commands.json
+debug/
+release/
+.cache/
+.clang-format
+tests/bin/
