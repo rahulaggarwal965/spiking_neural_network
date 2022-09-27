@@ -1,5 +1,5 @@
-#ifndef __SNN_INTERAL__
-#define __SNN_INTERAL__
+#ifndef __SNN_INTERNAL_H__
+#define __SNN_INTERNAL_H__
 
 #include <cstddef>
 #include <stdint.h>

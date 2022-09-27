@@ -147,10 +147,9 @@ void update(SNN &snn, f32 delta_time) {
             neuron.membrane_potential = MV_REST;
             neuron.refractory_period -= delta_time;
         } else {
+            neuron.membrane_potential += state_change[i] - MV_DECAY;
             if (neuron.membrane_potential < MV_MIN) {
                 neuron.membrane_potential = MV_REST;
-            } else {
-                neuron.membrane_potential += state_change[i] - MV_DECAY;
             }
         }
         if (neuron.membrane_potential >= MV_THRESH) {
@@ -167,7 +166,6 @@ void update(SNN &snn, f32 delta_time) {
                     continue;
                 const f32 spike_time_difference = snn.neurons[j].last_spike_time - snn.current_time;
                 if (spike_time_difference <= STDP_TIME_MIN && spike_time_difference >= STDP_TIME_MAX) {
-                    printf("spike_time_difference: %f\n",spike_time_difference);
 
                     // *pre* stdp should be always positive
                     f32 pre_stdp = A1 * exp(spike_time_difference / tc1);
@@ -176,12 +174,7 @@ void update(SNN &snn, f32 delta_time) {
 
                     // *post* stdp should be always negative
                     f32 post_stdp = A2 * exp(-spike_time_difference / tc2);
-                    printf("Post_stdp: %f\n", post_stdp);
                     f32 &previous_weight2 = snn.weight_matrix_transpose.data[col];
-                    printf("previous_weight2: %f\n",previous_weight2);
-                    /* f32 *previous_weight2 = &snn.weight_matrix_transpose.data[col]; */
-                    /* *previous_weight2 += W_CHANGE_RATE * post_stdp + (*previous_weight2 - W_MIN); */
-                    /* f32 &previous_weight2 = snn.weight_matrix_transpose.data[col]; */
                     previous_weight2 += W_CHANGE_RATE * post_stdp * (previous_weight2 - W_MIN);
                 }
             }
@@ -194,7 +187,7 @@ void update(SNN &snn, f32 delta_time) {
             /*     for (snn.spikes[) */
             /* } */
 
-            neuron.membrane_potential += MV_SPIKE;
+            neuron.membrane_potential = MV_THRESH + MV_SPIKE;
             neuron.refractory_period = REFRACTORY_PERIOD;
             neuron.last_spike_time = snn.current_time;
         }
@@ -220,8 +213,8 @@ inline SNN create_snn(const u32 num_neurons, bool randomize_synapses = true) {
                 if (i == j || distr(gen) < 0.3)
                     weight_matrix_transpose_data[index] = 0;
                 else
-                    // this 7 (constant) matters a lot for some reason
-                    weight_matrix_transpose_data[index] = distr(gen) * 7;
+                    // this 7 (constant) matters a lot for some reason and changes things based on num_neurons
+                    weight_matrix_transpose_data[index] = distr(gen) * 5;
             }
         }
     }
@@ -263,13 +256,13 @@ int main(int argc, char **argv) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<f32> distr;
-    for (memory_index i = 0; i < snn.num_neurons; i++) {
-        Neuron &neuron = snn.neurons[i];
-        if (distr(gen) < 0.3) {
-            neuron.membrane_potential = MV_THRESH;
-            snn.spike_train[i] = 1;
-        }
-    }
+    /* for (memory_index i = 0; i < snn.num_neurons; i++) { */
+    /*     Neuron &neuron = snn.neurons[i]; */
+    /*     if (distr(gen) < 0.3) { */
+    /*         neuron.membrane_potential = MV_THRESH; */
+    /*         snn.spike_train[i] = 1; */
+    /*     } */
+    /* } */
     print_buffer(snn.spike_train, snn.num_neurons);
 
 #if RECORD_SPIKES
@@ -338,7 +331,7 @@ int main(int argc, char **argv) {
 
     plt::suptitle("Neuron 0");
     plt::subplot(2, 1, 1);
-    plt::ylim(MV_MIN - 1, MV_THRESH + MV_SPIKE + 10);
+    /* plt::ylim(MV_MIN - 1, MV_THRESH + MV_SPIKE + 10); */
     plt::title("Neuron Voltage (mV)");
     for (memory_index i = 0; i < snn.num_neurons; i++) {
         /* plt::plot(time_units, snn.membrane_potentials[1]); */
